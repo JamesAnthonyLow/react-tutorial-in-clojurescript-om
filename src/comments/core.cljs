@@ -1,6 +1,7 @@
 (ns ^:figwheel-always comments.core
   (:require[om.core :as om :include-macros true]
                     [markdown.core :refer [md->html]]
+                    [cljs.core.async :refer [put! chan <!]]
                     [om.dom :as dom :include-macros true]))
 
 (enable-console-print!)
@@ -35,9 +36,16 @@
       (dom/div #js {:className "commentForm"} 
                "Hello, world! I am a CommentForm."))))
 
-(defn comment-box [data]
-  (reify om/IRender
-    (render [_]
+(defn comment-box [data owner]
+  (reify
+    om/IInitState
+    (init-state [_] 
+      {:data (chan)})
+    om/IWillMount
+    (will-mount [_]
+     (let [data (om/get-state owner :data)]))
+    om/IRenderState
+    (render-state [this state]
       (dom/div #js {:className "commentBox"}
                (dom/h1 nil "Comments")
                (om/build comment-list data)
